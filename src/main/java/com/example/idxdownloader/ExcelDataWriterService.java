@@ -20,15 +20,17 @@ import java.io.IOException;
 @AllArgsConstructor
 public class ExcelDataWriterService {
     private static final int COL_KODE_EMITEN = 0;
-    private static final int COL_OUTSTANDING_SHARES = 1;
-    private static final int COL_TOTAL_LIABILITIES = 2;
-    private static final int COL_TOTAL_EQUITIES = 3;
-    private static final int COL_NET_PROFIT = 4;
-    private static final int COL_NET_PROFIT_LAST_YEAR = 5;
-    private static final int COL_DER = 6;
-    private static final int COL_ROE = 7;
-    private static final int COL_EPS = 8;
-    private static final int COL_EPS_LAST_YEAR = 9;
+    private static final int COL_PRICE = 1;
+    private static final int COL_OUTSTANDING_SHARES = 2;
+    private static final int COL_TOTAL_LIABILITIES = 3;
+    private static final int COL_TOTAL_EQUITIES = 4;
+    private static final int COL_NET_PROFIT = 5;
+    private static final int COL_NET_PROFIT_LAST_YEAR = 6;
+    private static final int COL_DER = 7;
+    private static final int COL_ROE = 8;
+    private static final int COL_EPS = 9;
+    private static final int COL_EPS_LAST_YEAR = 10;
+    private static final int COL_LABA_NAIK_TURUN = 11;
 
     public void updateOrCreateExcel(String year, String period, String kodeEmiten, FinancialData financialData) throws IOException, FileNotFoundException {
         String targetFilePath = System.getProperty("user.home") + "\\.idx-tmp\\Summary-" + year + "-" + period + ".xlsx";
@@ -100,15 +102,17 @@ public class ExcelDataWriterService {
 
         String[] headers = {
                 "Kode Emiten",
+                "Price (Rp)",
                 "Outstanding Shares",
                 "Total Liabilities",
                 "Total Equities",
                 "Net Profit",
                 "Net Profit Last Year",
-                "DER (Debt to Equity Ratio)",
-                "ROE (Return on Equity)",
-                "EPS (Earning per Share)",
-                "EPS Last Year"};
+                "DER",
+                "ROE (%)",
+                "EPS (Earning/Share)",
+                "EPS Last Year",
+                "Laba Naik/Turun"};
 
         for (int i = 0; i < headers.length; i++) {
             Cell headerCell = headerRow.createCell(i);
@@ -127,9 +131,14 @@ public class ExcelDataWriterService {
         Row row = sheet.createRow(rowNum);
         row.createCell(COL_KODE_EMITEN).setCellValue(kodeEmiten);
 
+        Cell priceCell = row.createCell(COL_PRICE);
+        String priceFormula = "VLOOKUP(A" + (rowNum+1) + ",'Data'!$B$2:$Y$2741,4,FALSE)";
+        priceCell.setCellFormula(priceFormula);
+        priceCell.setCellStyle(currencyStyle);
+
         Cell outstandingSharesCell = row.createCell(COL_OUTSTANDING_SHARES);
-        String formula = "VLOOKUP(A" + (rowNum+1) + ",'Data'!$B$2:$Y$2741,3,FALSE)/1000000000";
-        outstandingSharesCell.setCellFormula(formula);
+        String outstandingShareFormula = "VLOOKUP(A" + (rowNum+1) + ",'Data'!$B$2:$Y$2741,3,FALSE)/1000000000";
+        outstandingSharesCell.setCellFormula(outstandingShareFormula);
         outstandingSharesCell.setCellStyle(decimalStyle);
 
         Cell totalLiabilitiesCell = row.createCell(COL_TOTAL_LIABILITIES);
@@ -184,9 +193,14 @@ public class ExcelDataWriterService {
 
         Cell epsLastyearCell = row.createCell(COL_EPS_LAST_YEAR);
         String epsLastYearFormula =  "(" + netProfitLastYear + (rowNum+1) + "/" + outstandingSharesCol + (rowNum+1) + ")*" + multiplier;;
-
         epsLastyearCell.setCellFormula(epsLastYearFormula);
         epsLastyearCell.setCellStyle(decimalStyle);
+
+        Cell labaNaikCell = row.createCell(COL_LABA_NAIK_TURUN);
+        String netProfitLastYearCol = colIndexToLetter(COL_NET_PROFIT_LAST_YEAR);
+        String labaNaikTurunFormula = "(("+ netProfitCol + (rowNum+1) + "/" + netProfitLastYearCol + (rowNum+1) +")-1)";
+        labaNaikCell.setCellFormula(labaNaikTurunFormula);
+        labaNaikCell.setCellStyle(percentageStyle);
     }
 
     private double getMultiplierForPeriod(String period) {

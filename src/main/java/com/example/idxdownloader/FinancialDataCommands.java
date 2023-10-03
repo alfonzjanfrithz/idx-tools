@@ -33,9 +33,5 @@ public class FinancialDataCommands {
             }
         }
     }
-
-    // TODO: Laba Naik/Turun
-    // TODO: Harga saham
     // TODO: Add PER, PBV, Market Cap,
-
 }
