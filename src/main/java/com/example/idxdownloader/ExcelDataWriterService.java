@@ -10,11 +10,9 @@ import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.util.CellRangeAddress;
-import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFConditionalFormattingRule;
 import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFFontFormatting;
-import org.apache.poi.xssf.usermodel.XSSFPatternFormatting;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFSheetConditionalFormatting;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -65,7 +63,7 @@ public class ExcelDataWriterService {
             lastRowNum = sheet.getLastRowNum() + 1;
         } else {
             workbook = new XSSFWorkbook();
-            sheet = workbook.createSheet("Sheet 1");
+            sheet = workbook.createSheet(String.format("%s-%s", year, period));
             lastRowNum = 0;
 
             // Create header
@@ -129,13 +127,13 @@ public class ExcelDataWriterService {
                 "Net Profit",
                 "Net Profit L/Y",
                 "Market Cap",
-                "DER",
+                "DER (x)",
                 "PBV (x)",
                 "PER (x)",
                 "ROE (%)",
                 "EPS (Rp)",
                 "EPS L/Y (Rp)",
-                "Laba",
+                "Laba (%)",
                 "Rough Exp Price",
                 "MoS (%)",
                 "Turnaround",
@@ -282,7 +280,7 @@ public class ExcelDataWriterService {
                 return 2.0;
             case "III":
                 return 4.0 / 3.0;
-            case "IIII": // Assuming you meant four 'I's for the fourth quarter
+            case "Tahunan": // Assuming you meant four 'I's for the fourth quarter
                 return 1.0;
             default:
                 throw new IllegalArgumentException("Invalid period: " + period);
