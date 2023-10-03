@@ -33,5 +33,14 @@ public class FinancialDataCommands {
             }
         }
     }
-    // TODO: Add PER, PBV, Market Cap,
+    // TODO: Add PER
+    // TODO: Add PBV,
+    // TODO: Add Market Cap
+    // TODO: Add Volume
+    // TODO: Add Liquidity
+    // TODO: Rough Expected Price
+    // TODO: Conditional Formatting
+    // TODO: Formatting table
+    // TODO: Date added
+    // TODO: Turn around
 }
