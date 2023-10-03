@@ -113,5 +113,4 @@ public class FinancialDataCommands {
 
     // TODO: Add Volume
     // TODO: Add Liquidity
-    // TODO: Formatting table
 }

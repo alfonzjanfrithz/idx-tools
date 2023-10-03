@@ -117,6 +117,8 @@ public class ExcelDataWriterService {
         Font font = workbook.createFont();
         font.setBold(true);
         headerStyle.setFont(font);
+        headerStyle.setBorderTop(BorderStyle.MEDIUM);
+        headerStyle.setBorderBottom(BorderStyle.MEDIUM);
 
         String[] headers = {
                 "Kode Emiten",
@@ -192,20 +194,33 @@ public class ExcelDataWriterService {
         applyNegativeValueRedFormatting(sheet, COL_EPS_LAST_YEAR);
         applyNegativeValueRedFormatting(sheet, COL_MOS);
 
+        for (int i = 0; i <= COL_DATE_ADDED; i++) {
+            applyThickBorderToColumn(sheet, i, workbook);
+        }
+
         autoSizeColumn(sheet);
     }
 
-    private void setColumnSeparator(XSSFSheet sheet, int colIndex) {
-        XSSFCellStyle style = sheet.getWorkbook().createCellStyle();
-        style.setBorderRight(BorderStyle.THICK);
+    private void applyThickBorderToColumn(XSSFSheet sheet, int colIndex, XSSFWorkbook workbook) {
 
         for (int i = 0; i <= sheet.getLastRowNum(); i++) {
-            Cell cell = sheet.getRow(i).getCell(colIndex);
-            if (cell != null) {
-                cell.setCellStyle(style);
+            Row row = sheet.getRow(i);
+            if (row != null) {
+                Cell cell = row.getCell(colIndex, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                CellStyle currentStyle = cell.getCellStyle();
+                CellStyle newStyle = workbook.createCellStyle();
+                newStyle.cloneStyleFrom(currentStyle);
+
+                // Add thick borders
+                newStyle.setBorderLeft(BorderStyle.MEDIUM);
+                newStyle.setBorderRight(BorderStyle.MEDIUM);
+
+                cell.setCellStyle(newStyle);
             }
         }
     }
+
+
 
     private void applyNegativeValueRedFormatting(XSSFSheet sheet, int colIndex) {
         XSSFWorkbook workbook = sheet.getWorkbook();
