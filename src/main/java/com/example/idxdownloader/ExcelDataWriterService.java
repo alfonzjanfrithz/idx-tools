@@ -44,6 +44,8 @@ public class ExcelDataWriterService {
     private static final int COL_EPS = 12;
     private static final int COL_EPS_LAST_YEAR = 13;
     private static final int COL_LABA_NAIK_TURUN = 14;
+    private static final int COL_ROUGH_EXPECTED_PRICE = 15;
+    private static final int COL_MOS = 16;
 
     public void updateOrCreateExcel(String year, String period, String kodeEmiten, FinancialData financialData) throws IOException, FileNotFoundException {
         String targetFilePath = System.getProperty("user.home") + "\\.idx-tmp\\Summary-" + year + "-" + period + ".xlsx";
@@ -128,7 +130,9 @@ public class ExcelDataWriterService {
                 "ROE (%)",
                 "EPS (Earning/Share)",
                 "EPS Last Year",
-                "Laba Naik/Turun"};
+                "Laba Naik/Turun",
+                "Rough Exp Price",
+                "Margin of Safety"};
 
         for (int i = 0; i < headers.length; i++) {
             Cell headerCell = headerRow.createCell(i);
@@ -157,6 +161,13 @@ public class ExcelDataWriterService {
         setCellFormula(row, COL_EPS, createFormula("(%s%d/%s%d)*%f", colIndexToLetter(COL_NET_PROFIT), currentRow, colIndexToLetter(COL_OUTSTANDING_SHARES), currentRow, multiplier), getDecimalStyle(workbook));
         setCellFormula(row, COL_EPS_LAST_YEAR, createFormula("(%s%d/%s%d)*%f", colIndexToLetter(COL_NET_PROFIT_LAST_YEAR), currentRow, colIndexToLetter(COL_OUTSTANDING_SHARES), currentRow, multiplier), getDecimalStyle(workbook));
         setCellFormula(row, COL_LABA_NAIK_TURUN, createFormula("((%s%d/%s%d)-1)", colIndexToLetter(COL_NET_PROFIT), currentRow, colIndexToLetter(COL_NET_PROFIT_LAST_YEAR), currentRow), getPercentageStyle(workbook));
+        setCellFormula(row, COL_ROUGH_EXPECTED_PRICE, createFormula("((%s%d/%s%d)*(%s%d*10))", colIndexToLetter(COL_PRICE), currentRow, colIndexToLetter(COL_PBV), currentRow, colIndexToLetter(COL_ROE), currentRow), getCurrencyStyle(workbook));
+
+        if (financialData.getNetProfit() >= 0) {
+            setCellFormula(row, COL_MOS, createFormula("(%s%d-%s%d)/%s%d", colIndexToLetter(COL_ROUGH_EXPECTED_PRICE), currentRow, colIndexToLetter(COL_PRICE), currentRow, colIndexToLetter(COL_ROUGH_EXPECTED_PRICE), currentRow), getPercentageStyle(workbook));
+        } else {
+            setCellValue(row, COL_MOS, "P. Loss", null);
+        }
 
         applyNegativeValueRedFormatting(sheet, COL_PER);
         applyNegativeValueRedFormatting(sheet, COL_PBV);
@@ -166,6 +177,7 @@ public class ExcelDataWriterService {
         applyNegativeValueRedFormatting(sheet, COL_NET_PROFIT_LAST_YEAR);
         applyNegativeValueRedFormatting(sheet, COL_EPS);
         applyNegativeValueRedFormatting(sheet, COL_EPS_LAST_YEAR);
+        applyNegativeValueRedFormatting(sheet, COL_MOS);
 
         autoSizeColumn(sheet);
     }
