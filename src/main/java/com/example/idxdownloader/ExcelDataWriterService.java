@@ -40,6 +40,9 @@ public class ExcelDataWriterService {
             // Create header
             createHeader(workbook, sheet);
             lastRowNum++;
+
+            // Copy "Data" sheet from shares_detail_20230929.xlsx to this workbook
+            copyDataSheetToWorkbook(workbook);
         }
 
         // Add data
@@ -51,6 +54,32 @@ public class ExcelDataWriterService {
         workbook.close();
     }
 
+    private void copyDataSheetToWorkbook(XSSFWorkbook targetWorkbook) throws IOException {
+        String sourceFilePath = "shares_detail_20230929.xlsx"; // Assuming it's in the root folder
+        FileInputStream fis = new FileInputStream(sourceFilePath);
+        XSSFWorkbook sourceWorkbook = new XSSFWorkbook(fis);
+        XSSFSheet sourceSheet = sourceWorkbook.getSheet("Data");
+
+        XSSFSheet targetSheet = targetWorkbook.createSheet("Data");
+
+        for (int i = 0; i <= sourceSheet.getLastRowNum(); i++) {
+            Row sourceRow = sourceSheet.getRow(i);
+            Row targetRow = targetSheet.createRow(i);
+            if (sourceRow != null) {
+                for (int j = 0; j < sourceRow.getLastCellNum(); j++) {
+                    Cell sourceCell = sourceRow.getCell(j);
+                    Cell targetCell = targetRow.createCell(j);
+                    if (sourceCell != null) {
+                        targetCell.setCellValue(sourceCell.toString());
+                    }
+                }
+            }
+        }
+
+        sourceWorkbook.close();
+        fis.close();
+    }
+
     private void createHeader(XSSFWorkbook workbook, XSSFSheet sheet) {
         Row headerRow = sheet.createRow(0);
         CellStyle headerStyle = workbook.createCellStyle();
@@ -58,7 +87,7 @@ public class ExcelDataWriterService {
         font.setBold(true);
         headerStyle.setFont(font);
 
-        String[] headers = {"Kode Emiten", "Total Liabilities", "Total Equities", "Net Profit", "Net Profit Last Year", "DER", "ROE"};
+        String[] headers = {"Kode Emiten", "Outstanding Shares", "Total Liabilities", "Total Equities", "Net Profit", "Net Profit Last Year", "DER", "ROE"};
         for (int i = 0; i < headers.length; i++) {
             Cell headerCell = headerRow.createCell(i);
             headerCell.setCellValue(headers[i]);
@@ -76,27 +105,32 @@ public class ExcelDataWriterService {
         Row row = sheet.createRow(rowNum);
         row.createCell(0).setCellValue(kodeEmiten);
 
-        Cell totalLiabilitiesCell = row.createCell(1);
+        Cell outstandingSharesCell = row.createCell(1);
+        String formula = "VLOOKUP(A" + (rowNum+1) + ",'Data'!$B$2:$Y$2741,3,FALSE)/1000000000";
+        outstandingSharesCell.setCellFormula(formula);
+        outstandingSharesCell.setCellStyle(decimalStyle);
+
+        Cell totalLiabilitiesCell = row.createCell(2);
         double totalLiabilities = financialData.getTotalLiabilities();
         totalLiabilitiesCell.setCellValue(totalLiabilities);
         totalLiabilitiesCell.setCellStyle(currencyStyle);
 
-        Cell totalEquitiesCell = row.createCell(2);
+        Cell totalEquitiesCell = row.createCell(3);
         double totalEquities  = financialData.getTotalEquities();
         totalEquitiesCell.setCellValue(totalEquities);
         totalEquitiesCell.setCellStyle(currencyStyle);
 
-        Cell netProfitCell = row.createCell(3);
+        Cell netProfitCell = row.createCell(4);
         double netProfit = financialData.getNetProfit();
         netProfitCell.setCellValue(netProfit);
         netProfitCell.setCellStyle(currencyStyle);
 
-        Cell netProfitLastYearCell = row.createCell(4);
+        Cell netProfitLastYearCell = row.createCell(5);
         double netProfitLastYear = financialData.getNetProfitLastYear();
         netProfitLastYearCell.setCellValue(netProfitLastYear);
         netProfitLastYearCell.setCellStyle(currencyStyle);
 
-        Cell derCell = row.createCell(5);
+        Cell derCell = row.createCell(6);
         derCell.setCellValue(totalLiabilities / totalEquities);
         derCell.setCellStyle(decimalStyle);
 
@@ -120,7 +154,7 @@ public class ExcelDataWriterService {
                 throw new IllegalArgumentException("Invalid period: " + period);
         }
 
-        Cell roeCell = row.createCell(6);
+        Cell roeCell = row.createCell(7);
         roeCell.setCellValue(adjustedNetProfit / totalEquities);
         roeCell.setCellStyle(percentageStyle);
 
