@@ -25,6 +25,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.time.LocalDate;
 
 @Service
 @AllArgsConstructor
@@ -46,6 +47,8 @@ public class ExcelDataWriterService {
     private static final int COL_LABA_NAIK_TURUN = 14;
     private static final int COL_ROUGH_EXPECTED_PRICE = 15;
     private static final int COL_MOS = 16;
+    private static final int COL_TURNAROUND = 17;
+    private static final int COL_DATE_ADDED = 18;
 
     public void updateOrCreateExcel(String year, String period, String kodeEmiten, FinancialData financialData) throws IOException, FileNotFoundException {
         String targetFilePath = System.getProperty("user.home") + "\\.idx-tmp\\Summary-" + year + "-" + period + ".xlsx";
@@ -118,21 +121,23 @@ public class ExcelDataWriterService {
         String[] headers = {
                 "Kode Emiten",
                 "Price (Rp)",
-                "Outstanding Shares",
-                "Total Liabilities",
-                "Total Equities",
+                "Shares",
+                "Liabilities",
+                "Equities",
                 "Net Profit",
-                "Net Profit Last Year",
+                "Net Profit L/Y",
                 "Market Cap",
                 "DER",
                 "PBV (x)",
                 "PER (x)",
                 "ROE (%)",
-                "EPS (Earning/Share)",
-                "EPS Last Year",
-                "Laba Naik/Turun",
+                "EPS (Rp)",
+                "EPS L/Y (Rp)",
+                "Laba",
                 "Rough Exp Price",
-                "Margin of Safety"};
+                "MoS (%)",
+                "Turnaround",
+                "Date Added"};
 
         for (int i = 0; i < headers.length; i++) {
             Cell headerCell = headerRow.createCell(i);
@@ -168,6 +173,14 @@ public class ExcelDataWriterService {
         } else {
             setCellValue(row, COL_MOS, "P. Loss", null);
         }
+
+        if (financialData.getNetProfit() >= 0 && financialData.getNetProfitLastYear() <=0) {
+            setCellValue(row, COL_TURNAROUND, "TA+", null);
+        } else if (financialData.getNetProfit() <= 0 && financialData.getNetProfitLastYear() >=0) {
+            setCellValue(row, COL_TURNAROUND, "TA-", null);
+        }
+
+        setCellValue(row, COL_DATE_ADDED, LocalDate.now(), getDateStyle(workbook));
 
         applyNegativeValueRedFormatting(sheet, COL_PER);
         applyNegativeValueRedFormatting(sheet, COL_PBV);
@@ -226,6 +239,8 @@ public class ExcelDataWriterService {
             cell.setCellValue((Double) value);
         } else if (value instanceof String) {
             cell.setCellValue((String) value);
+        } else if (value instanceof LocalDate) {
+            cell.setCellValue((LocalDate) value);
         }
         if (style != null) {
             cell.setCellStyle(style);
@@ -278,6 +293,13 @@ public class ExcelDataWriterService {
         CellStyle style = workbook.createCellStyle();
         DataFormat format = workbook.createDataFormat();
         style.setDataFormat(format.getFormat("0.00%"));
+        return style;
+    }
+
+    private CellStyle getDateStyle(XSSFWorkbook workbook) {
+        CellStyle style = workbook.createCellStyle();
+        DataFormat format = workbook.createDataFormat();
+        style.setDataFormat(format.getFormat("dd-MM-yyyy")); // Format the date as "day-month-year"
         return style;
     }
 

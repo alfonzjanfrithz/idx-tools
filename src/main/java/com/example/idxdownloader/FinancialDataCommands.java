@@ -25,7 +25,7 @@ public class FinancialDataCommands {
         fileDownloadService.downloadFS(year, period, kodeEmiten);
     }
 
-    // readFinancialData 2023 II HRTA,ANJT,KEJU,SBMA,PURA,KLBF,BAYU,BSML,INCO,MITI,ADMF
+    // readFinancialData 2023 II HRTA,ANJT,GOTO,KEJU,SBMA,PURA,KLBF,BAYU,BSML,INCO,MITI,ADMF
     @Command(command = "readFinancialData", description = "Read the financial data for the given year, period, and multiple kodeEmiten values.")
     public void readFinancialData(String year, String period, String kodeEmitenList) {
         String[] kodeEmitens = kodeEmitenList.split(",");
@@ -113,8 +113,5 @@ public class FinancialDataCommands {
 
     // TODO: Add Volume
     // TODO: Add Liquidity
-    // TODO: Rough Expected Price
     // TODO: Formatting table
-    // TODO: Date added
-    // TODO: Turn around
 }
