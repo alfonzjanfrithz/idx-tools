@@ -19,6 +19,17 @@ import java.io.IOException;
 @Service
 @AllArgsConstructor
 public class ExcelDataWriterService {
+    private static final int COL_KODE_EMITEN = 0;
+    private static final int COL_OUTSTANDING_SHARES = 1;
+    private static final int COL_TOTAL_LIABILITIES = 2;
+    private static final int COL_TOTAL_EQUITIES = 3;
+    private static final int COL_NET_PROFIT = 4;
+    private static final int COL_NET_PROFIT_LAST_YEAR = 5;
+    private static final int COL_DER = 6;
+    private static final int COL_ROE = 7;
+    private static final int COL_EPS = 8;
+    private static final int COL_EPS_LAST_YEAR = 9;
+
     public void updateOrCreateExcel(String year, String period, String kodeEmiten, FinancialData financialData) throws IOException, FileNotFoundException {
         String targetFilePath = System.getProperty("user.home") + "\\.idx-tmp\\Summary-" + year + "-" + period + ".xlsx";
         File targetFile = new File(targetFilePath);
@@ -87,7 +98,18 @@ public class ExcelDataWriterService {
         font.setBold(true);
         headerStyle.setFont(font);
 
-        String[] headers = {"Kode Emiten", "Outstanding Shares", "Total Liabilities", "Total Equities", "Net Profit", "Net Profit Last Year", "DER", "ROE"};
+        String[] headers = {
+                "Kode Emiten",
+                "Outstanding Shares",
+                "Total Liabilities",
+                "Total Equities",
+                "Net Profit",
+                "Net Profit Last Year",
+                "DER (Debt to Equity Ratio)",
+                "ROE (Return on Equity)",
+                "EPS (Earning per Share)",
+                "EPS Last Year"};
+
         for (int i = 0; i < headers.length; i++) {
             Cell headerCell = headerRow.createCell(i);
             headerCell.setCellValue(headers[i]);
@@ -103,59 +125,47 @@ public class ExcelDataWriterService {
 
         // Add data
         Row row = sheet.createRow(rowNum);
-        row.createCell(0).setCellValue(kodeEmiten);
+        row.createCell(COL_KODE_EMITEN).setCellValue(kodeEmiten);
 
-        Cell outstandingSharesCell = row.createCell(1);
+        Cell outstandingSharesCell = row.createCell(COL_OUTSTANDING_SHARES);
         String formula = "VLOOKUP(A" + (rowNum+1) + ",'Data'!$B$2:$Y$2741,3,FALSE)/1000000000";
         outstandingSharesCell.setCellFormula(formula);
         outstandingSharesCell.setCellStyle(decimalStyle);
 
-        Cell totalLiabilitiesCell = row.createCell(2);
+        Cell totalLiabilitiesCell = row.createCell(COL_TOTAL_LIABILITIES);
         double totalLiabilities = financialData.getTotalLiabilities();
         totalLiabilitiesCell.setCellValue(totalLiabilities);
         totalLiabilitiesCell.setCellStyle(currencyStyle);
 
-        Cell totalEquitiesCell = row.createCell(3);
+        Cell totalEquitiesCell = row.createCell(COL_TOTAL_EQUITIES);
         double totalEquities  = financialData.getTotalEquities();
         totalEquitiesCell.setCellValue(totalEquities);
         totalEquitiesCell.setCellStyle(currencyStyle);
 
-        Cell netProfitCell = row.createCell(4);
+        Cell netProfitCell = row.createCell(COL_NET_PROFIT);
         double netProfit = financialData.getNetProfit();
         netProfitCell.setCellValue(netProfit);
         netProfitCell.setCellStyle(currencyStyle);
 
-        Cell netProfitLastYearCell = row.createCell(5);
+        Cell netProfitLastYearCell = row.createCell(COL_NET_PROFIT_LAST_YEAR);
         double netProfitLastYear = financialData.getNetProfitLastYear();
         netProfitLastYearCell.setCellValue(netProfitLastYear);
         netProfitLastYearCell.setCellStyle(currencyStyle);
 
-        Cell derCell = row.createCell(6);
-        derCell.setCellValue(totalLiabilities / totalEquities);
+        Cell derCell = row.createCell(COL_DER);
+        String totalLiabilitiesCol = colIndexToLetter(COL_TOTAL_LIABILITIES);
+        String totalEquitiesCol = colIndexToLetter(COL_TOTAL_EQUITIES);
+        String derFormula = totalLiabilitiesCol + (rowNum+1) + "/" + totalEquitiesCol + (rowNum+1);
+
+        derCell.setCellFormula(derFormula);
         derCell.setCellStyle(decimalStyle);
 
-
         // Adjust ROE based on the period
-        double adjustedNetProfit = netProfit;
-        switch (period) {
-            case "I":
-                adjustedNetProfit = netProfit * 4;
-                break;
-            case "II":
-                adjustedNetProfit = netProfit * 2;
-                break;
-            case "III":
-                adjustedNetProfit = netProfit * (4.0 / 3.0);
-                break;
-            case "IIII": // Assuming you meant four 'I's for the fourth quarter
-                // No adjustment needed
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid period: " + period);
-        }
-
-        Cell roeCell = row.createCell(7);
-        roeCell.setCellValue(adjustedNetProfit / totalEquities);
+        double multiplier = getMultiplierForPeriod(period);
+        String netProfitCol = colIndexToLetter(COL_NET_PROFIT);
+        String roeFormulaBase = "(" + netProfitCol + (rowNum+1) + "/" + totalEquitiesCol + (rowNum+1) + ")*" + multiplier;
+        Cell roeCell = row.createCell(COL_ROE);
+        roeCell.setCellFormula(roeFormulaBase);
         roeCell.setCellStyle(percentageStyle);
 
         int numberOfColumns = sheet.getRow(0).getLastCellNum();
@@ -164,7 +174,36 @@ public class ExcelDataWriterService {
         for (int i = 0; i < numberOfColumns; i++) {
             sheet.autoSizeColumn(i);
         }
+
+        Cell epsCell = row.createCell(COL_EPS);
+        String outstandingSharesCol = colIndexToLetter(COL_OUTSTANDING_SHARES);
+        String epsFormula =  "(" + netProfitCol + (rowNum+1) + "/" + outstandingSharesCol + (rowNum+1) + ")*" + multiplier;;
+
+        epsCell.setCellFormula(epsFormula);
+        epsCell.setCellStyle(decimalStyle);
+
+        Cell epsLastyearCell = row.createCell(COL_EPS_LAST_YEAR);
+        String epsLastYearFormula =  "(" + netProfitLastYear + (rowNum+1) + "/" + outstandingSharesCol + (rowNum+1) + ")*" + multiplier;;
+
+        epsLastyearCell.setCellFormula(epsLastYearFormula);
+        epsLastyearCell.setCellStyle(decimalStyle);
     }
+
+    private double getMultiplierForPeriod(String period) {
+        switch (period) {
+            case "I":
+                return 4.0;
+            case "II":
+                return 2.0;
+            case "III":
+                return 4.0 / 3.0;
+            case "IIII": // Assuming you meant four 'I's for the fourth quarter
+                return 1.0;
+            default:
+                throw new IllegalArgumentException("Invalid period: " + period);
+        }
+    }
+
 
     private CellStyle getCurrencyStyle(XSSFWorkbook workbook) {
         CellStyle style = workbook.createCellStyle();
@@ -185,5 +224,15 @@ public class ExcelDataWriterService {
         DataFormat format = workbook.createDataFormat();
         style.setDataFormat(format.getFormat("0.00%"));
         return style;
+    }
+
+    private static String colIndexToLetter(int colIndex) {
+        StringBuilder columnName = new StringBuilder();
+        while (colIndex >= 0) {
+            int currentChar = colIndex % 26 + 'A';
+            columnName.append((char) currentChar);
+            colIndex = colIndex / 26 - 1;
+        }
+        return columnName.reverse().toString();
     }
 }
