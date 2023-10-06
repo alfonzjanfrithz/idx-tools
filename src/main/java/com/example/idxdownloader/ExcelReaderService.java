@@ -5,16 +5,17 @@ import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.Map;
 
 @Service
 @AllArgsConstructor
 public class ExcelReaderService {
-    private FileDownloadService fileService;
+    private final FileDownloadService fileService;
     private final ExcelDataReaderService dataReaderService;
     private final ExcelDataWriterService dataWriterService;
 
 
-    public void readExcel(String year, String period, String kodeEmiten) throws IOException, InvalidFormatException {
+    public void readExcel(String year, String period, String kodeEmiten, Map<String, TradingSummary> tradingSummary) throws IOException, InvalidFormatException {
         String filePath = fileService.getFilePath(year, period, kodeEmiten);
 
         if (!fileService.fileExists(filePath)) {
@@ -22,6 +23,6 @@ public class ExcelReaderService {
         }
 
         FinancialData financialData = dataReaderService.readFinancialData(filePath);
-        dataWriterService.updateOrCreateExcel(year, period, kodeEmiten, financialData);
+        dataWriterService.updateOrCreateExcel(year, period, kodeEmiten, financialData, tradingSummary);
     }
 }

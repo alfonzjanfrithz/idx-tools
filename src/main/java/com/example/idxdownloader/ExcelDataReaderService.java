@@ -34,7 +34,7 @@ public class ExcelDataReaderService {
         final double USD_CONVERSION_RATE = 15000.0; // Conversion rate for USD to IDR
         final double BILLION = 1_000_000_000.0; // 1 billion
 
-        ZipSecureFile.setMinInflateRatio(0.005);
+        ZipSecureFile.setMinInflateRatio(0.002);
         try (XSSFWorkbook workbook = new XSSFWorkbook(new File(filePath))) {
             XSSFSheet info = workbook.getSheetAt(SH_GENERAL_INFO_IDX);
             boolean isIDRCurrency = isInIDR(info);

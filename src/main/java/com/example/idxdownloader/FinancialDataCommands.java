@@ -18,6 +18,7 @@ public class FinancialDataCommands {
 
     private FileDownloadService fileDownloadService;
     private ExcelReaderService excelReaderService;
+    private TradingSummaryService tradingSummaryService;
 
     // downloadFinancialStatement 2023 II ANJT
     @Command(command = "downloadFinancialStatement", description = "Download the financial statement for the given year, period, and kodeEmiten.")
@@ -29,20 +30,22 @@ public class FinancialDataCommands {
     @Command(command = "readFinancialData", description = "Read the financial data for the given year, period, and multiple kodeEmiten values.")
     public void readFinancialData(String year, String period, String kodeEmitenList) {
         String[] kodeEmitens = kodeEmitenList.split(",");
+        int currentCount = 0;
         int successfulCount = 0;
         int failedCount = 0;
         Map<String, String> failedDetails = new HashMap<>();
         long totalProcessingTime = 0;
 
         long startTimeOverall = System.currentTimeMillis(); // Start time for the entire process
-
+        Map<String, TradingSummary> tradingSummary = tradingSummaryService.getTradingSummary();
         for (String kodeEmiten : kodeEmitens) {
+            currentCount++;
             long startTime = System.currentTimeMillis(); // Start time for this kodeEmiten
 
             System.out.println(ANSI_YELLOW + "════════════════════════════════════════════════════════════════════════" + ANSI_RESET);
-            System.out.println(ANSI_CYAN + "🔄 Processing data for kodeEmiten: " + kodeEmiten.trim() + "..." + ANSI_RESET);
+            System.out.println(ANSI_CYAN + "🔄 Processing data for kodeEmiten: " + kodeEmiten.trim() +" ("+ currentCount + "/" + kodeEmitens.length + ") ..." + ANSI_RESET);
             try {
-                excelReaderService.readExcel(year, period, kodeEmiten.trim());
+                excelReaderService.readExcel(year, period, kodeEmiten.trim(), tradingSummary);
                 System.out.println(ANSI_GREEN + "✅ Successfully processed data for kodeEmiten: " + kodeEmiten.trim() + ANSI_RESET);
                 successfulCount++;
             } catch (Exception e) {

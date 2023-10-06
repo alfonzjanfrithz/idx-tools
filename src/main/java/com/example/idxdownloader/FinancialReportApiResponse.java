@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 @Data
-public class ApiResponse {
+public class FinancialReportApiResponse {
     @JsonProperty("Search")
     private Map<String, String> search;
     @JsonProperty("ResultCount")

@@ -39,14 +39,14 @@ public class FileDownloadService {
         } else {
             periode = "audit";
         }
-        ApiResponse apiResponse = financialStatementService.fetchData(year, periode, kodeEmiten);
-        List<Attachment> attachmentExcel = filterAttachmentsByFileType(apiResponse, "xlsx");
+        FinancialReportApiResponse financialReportApiResponse = financialStatementService.fetchFinancialReport(year, periode, kodeEmiten);
+        List<Attachment> attachmentExcel = filterAttachmentsByFileType(financialReportApiResponse, "xlsx");
         Optional<String> link = attachmentExcel.stream().map(attachment -> "https://idx.co.id" + attachment.getFilePath()).findAny();
         downloadFile(link.get());
     }
 
-    public List<Attachment> filterAttachmentsByFileType(ApiResponse apiResponse, String fileType) {
-        return apiResponse.getResults().stream()
+    public List<Attachment> filterAttachmentsByFileType(FinancialReportApiResponse financialReportApiResponse, String fileType) {
+        return financialReportApiResponse.getResults().stream()
                 .flatMap(result -> result.getAttachments().stream())
                 .filter(attachment -> (attachment.getFileType().contains(fileType)))
                 .collect(Collectors.toList());
