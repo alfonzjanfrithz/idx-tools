@@ -14,16 +14,21 @@ import java.util.Map;
 @Command
 @AllArgsConstructor
 public class FinancialDataCommands {
-    private static final Logger logger = LoggerFactory.getLogger(FinancialDataCommands.class);
+    public static final String ANSI_RESET = "\u001B[0m";
+    public static final String ANSI_RED = "\u001B[31m";
+    public static final String ANSI_GREEN = "\u001B[32m";
+    public static final String ANSI_CYAN = "\u001B[36m";
+    public static final String ANSI_YELLOW = "\u001B[33m";
+    public static final String ANSI_BLUE = "\u001B[34m";
 
-    private FileDownloadService fileDownloadService;
     private ExcelReaderService excelReaderService;
     private TradingSummaryService tradingSummaryService;
+    private ValueSheetService valueSheetService;
 
-    // downloadFinancialStatement 2023 II ANJT
-    @Command(command = "downloadFinancialStatement", description = "Download the financial statement for the given year, period, and kodeEmiten.")
-    public void downloadFinancialStatement(int year, String period, String kodeEmiten) {
-        fileDownloadService.downloadFS(year, period, kodeEmiten);
+    // valueSheet 2023 II ANJT
+    @Command(command = "valueSheet", description = "Populate value sheet")
+    public void valueSheet(String kodeEmiten) throws IOException {
+        valueSheetService.populateTemplate(kodeEmiten);
     }
 
     // readFinancialData 2023 II HRTA,ANJT,GOTO,KEJU,SBMA,PURA,KLBF,BAYU,BSML,INCO,MITI,ADMF
@@ -106,14 +111,6 @@ public class FinancialDataCommands {
         return formattedTime.toString().trim(); // trim() to remove any trailing space
     }
 
-    public static final String ANSI_RESET = "\u001B[0m";
-    public static final String ANSI_RED = "\u001B[31m";
-    public static final String ANSI_GREEN = "\u001B[32m";
-    public static final String ANSI_CYAN = "\u001B[36m";
-    public static final String ANSI_YELLOW = "\u001B[33m";
-    public static final String ANSI_BLUE = "\u001B[34m";
-
-
-    // TODO: Add Volume
-    // TODO: Add Liquidity
+    // TODO: Create the directory if its not available
+    // TODO: Refactor many things
 }
