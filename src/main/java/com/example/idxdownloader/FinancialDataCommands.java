@@ -27,7 +27,7 @@ public class FinancialDataCommands {
 
     // valueSheet 2023 II ANJT
     @Command(command = "valueSheet", description = "Populate value sheet")
-    public void valueSheet(String kodeEmiten) throws IOException {
+    public void valueSheet(String kodeEmiten) throws IOException, InvalidFormatException {
         valueSheetService.populateTemplate(kodeEmiten);
     }
 

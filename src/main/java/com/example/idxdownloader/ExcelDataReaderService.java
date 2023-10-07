@@ -27,6 +27,8 @@ public class ExcelDataReaderService {
     public static final String KEY_JUMLAH_LIABILITAS = "Jumlah liabilitas";
     public static final String KEY_EKUITAS_ENTITAS_INDUK = "Jumlah ekuitas yang diatribusikan kepada pemilik entitas induk";
     public static final String KEY_LABA_RUGI_ENTITAS_INDUK = "Laba (rugi) yang dapat diatribusikan ke entitas induk";
+    public static final String KEY_PENJUALAN_DAN_PENDAPATAN_USAHA = "Penjualan dan pendapatan usaha";
+    public static final String KEY_BEBAN_POKOK = "Beban pokok penjualan dan pendapatan";
 
     public FinancialData readFinancialData(String filePath) throws IOException, InvalidFormatException {
         FinancialData financialData = new FinancialData();
@@ -47,11 +49,13 @@ public class ExcelDataReaderService {
             XSSFSheet profitLoss = workbook.getSheetAt(SH_PROFIT_LOSS);
             double netProfit = getNetProfit(profitLoss);
             double netProfitLastYear = getNetProfitLastYear(profitLoss);
+            double revenue = getRevenue(profitLoss);
 
             // Convert values if they are in USD
             if (!isIDRCurrency) {
                 totalLiabilities *= USD_CONVERSION_RATE;
                 totalEquities *= USD_CONVERSION_RATE;
+                revenue *= USD_CONVERSION_RATE;
                 netProfit *= USD_CONVERSION_RATE;
                 netProfitLastYear *= USD_CONVERSION_RATE;
             }
@@ -59,6 +63,7 @@ public class ExcelDataReaderService {
             // Normalize values based on the multiplier and convert to billions
             totalLiabilities = (totalLiabilities * multiplier) / BILLION;
             totalEquities = (totalEquities * multiplier) / BILLION;
+            revenue = (revenue * multiplier) / BILLION;
             netProfit = (netProfit * multiplier) / BILLION;
             netProfitLastYear = (netProfitLastYear * multiplier) / BILLION;
 
@@ -67,6 +72,7 @@ public class ExcelDataReaderService {
             financialData.setTotalEquities(totalEquities);
             financialData.setNetProfit(netProfit);
             financialData.setNetProfitLastYear(netProfitLastYear);
+            financialData.setRevenue(revenue);
             financialData.setIDRCurrency(isIDRCurrency);
             financialData.setMultiplier(multiplier);
         }
@@ -86,6 +92,11 @@ public class ExcelDataReaderService {
 
     private static Double getNetProfit(XSSFSheet sheet) throws IOException {
         String netProfit = findRowValue(KEY_LABA_RUGI_ENTITAS_INDUK, sheet);
+        return Double.parseDouble(netProfit);
+    }
+
+    private static Double getRevenue(XSSFSheet sheet) throws IOException {
+        String netProfit = findRowValue(KEY_PENJUALAN_DAN_PENDAPATAN_USAHA, sheet);
         return Double.parseDouble(netProfit);
     }
 

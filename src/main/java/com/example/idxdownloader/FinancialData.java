@@ -16,4 +16,7 @@ public class FinancialData {
     private Double totalEquities;
     private Double netProfit;
     private Double netProfitLastYear;
+
+    private Double revenue;
+    private Double cogs;
 }

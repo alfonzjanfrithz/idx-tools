@@ -16,6 +16,11 @@ public class ExcelReaderService {
 
 
     public void readExcel(String year, String period, String kodeEmiten, Map<String, TradingSummary> tradingSummary) throws IOException, InvalidFormatException {
+        FinancialData financialData = getFinancialData(year, period, kodeEmiten);
+        dataWriterService.updateOrCreateExcel(year, period, kodeEmiten, financialData, tradingSummary);
+    }
+
+    public FinancialData getFinancialData(String year, String period, String kodeEmiten) throws IOException, InvalidFormatException {
         String filePath = fileService.getFilePath(year, period, kodeEmiten);
 
         if (!fileService.fileExists(filePath)) {
@@ -23,6 +28,6 @@ public class ExcelReaderService {
         }
 
         FinancialData financialData = dataReaderService.readFinancialData(filePath);
-        dataWriterService.updateOrCreateExcel(year, period, kodeEmiten, financialData, tradingSummary);
+        return financialData;
     }
 }
