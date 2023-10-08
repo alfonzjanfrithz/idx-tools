@@ -49,13 +49,11 @@ public class ExcelDataReaderService {
             XSSFSheet profitLoss = workbook.getSheetAt(SH_PROFIT_LOSS);
             double netProfit = getNetProfit(profitLoss);
             double netProfitLastYear = getNetProfitLastYear(profitLoss);
-            double revenue = getRevenue(profitLoss);
 
             // Convert values if they are in USD
             if (!isIDRCurrency) {
                 totalLiabilities *= USD_CONVERSION_RATE;
                 totalEquities *= USD_CONVERSION_RATE;
-                revenue *= USD_CONVERSION_RATE;
                 netProfit *= USD_CONVERSION_RATE;
                 netProfitLastYear *= USD_CONVERSION_RATE;
             }
@@ -63,7 +61,6 @@ public class ExcelDataReaderService {
             // Normalize values based on the multiplier and convert to billions
             totalLiabilities = (totalLiabilities * multiplier) / BILLION;
             totalEquities = (totalEquities * multiplier) / BILLION;
-            revenue = (revenue * multiplier) / BILLION;
             netProfit = (netProfit * multiplier) / BILLION;
             netProfitLastYear = (netProfitLastYear * multiplier) / BILLION;
 
@@ -72,7 +69,6 @@ public class ExcelDataReaderService {
             financialData.setTotalEquities(totalEquities);
             financialData.setNetProfit(netProfit);
             financialData.setNetProfitLastYear(netProfitLastYear);
-            financialData.setRevenue(revenue);
             financialData.setIDRCurrency(isIDRCurrency);
             financialData.setMultiplier(multiplier);
         }

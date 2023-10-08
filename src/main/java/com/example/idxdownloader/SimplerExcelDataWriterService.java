@@ -1,6 +1,8 @@
 package com.example.idxdownloader;
 
+import com.google.common.collect.ImmutableList;
 import lombok.AllArgsConstructor;
+import org.apache.poi.ooxml.POIXMLProperties;
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -23,36 +25,31 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 
 @Service
 @AllArgsConstructor
-public class ExcelDataWriterService {
-    private static final int COL_KODE_EMITEN = 0;
-    private static final int COL_PRICE = 1;
-    private static final int COL_OUTSTANDING_SHARES = 2;
-    private static final int COL_VOLUME = 3;
-    private static final int COL_LIQUIDITY = 4;
-    private static final int COL_TOTAL_LIABILITIES = 5;
-    private static final int COL_TOTAL_EQUITIES = 6;
-    private static final int COL_NET_PROFIT = 7;
-    private static final int COL_NET_PROFIT_LAST_YEAR = 8;
-    private static final int COL_MARKET_CAP = 9;
-    private static final int COL_DER = 10;
-    private static final int COL_PBV = 11;
-    private static final int COL_PER = 12;
-    private static final int COL_ROE = 13;
-    private static final int COL_EPS = 14;
-    private static final int COL_EPS_LAST_YEAR = 15;
-    private static final int COL_LABA_NAIK_TURUN = 16;
-    private static final int COL_ROUGH_EXPECTED_PRICE = 17;
-    private static final int COL_MOS = 18;
-    private static final int COL_TURNAROUND = 19;
-    private static final int COL_DATE_ADDED = 20;
+public class SimplerExcelDataWriterService {
+    private static final int COL_NO = 0;
+    private static final int COL_KODE_EMITEN = 1;
+    private static final int COL_PRICE = 2;
+    private static final int COL_PER = 3;
+    private static final int COL_PBV = 4;
+    private static final int COL_DER = 5;
+    private static final int COL_ROE = 6;
+    private static final int COL_OUTSTANDING_SHARES = 7;
+    private static final int COL_TOTAL_LIABILITIES = 8;
+    private static final int COL_TOTAL_EQUITIES = 9;
+    private static final int COL_NET_PROFIT = 10;
+    private static final int COL_NET_PROFIT_LAST_YEAR = 11;
+    private static final int COL_EPS = 12;
+    private static final int COL_MARKET_CAP = 13;
+    private static final int COL_LABA_NAIK_TURUN = 14;
 
 
-    public void updateOrCreateExcel(String year, String period, String kodeEmiten, FinancialData financialData, Map<String,TradingSummary> tradingSummary) throws IOException {
-        String targetFilePath = System.getProperty("user.home") + "\\.idx-tmp\\Summary-" + year + "-" + period + ".xlsx";
+    public void updateOrCreateExcel(String year, String period, String kodeEmiten, FinancialData financialData) throws IOException {
+        String targetFilePath = System.getProperty("user.home") + "\\.idx-tmp\\kalkulator-saham-" + year + "-" + period + ".xlsx";
         File targetFile = new File(targetFilePath);
 
         XSSFWorkbook workbook;
@@ -66,7 +63,7 @@ public class ExcelDataWriterService {
             lastRowNum = sheet.getLastRowNum() + 1;
         } else {
             workbook = new XSSFWorkbook();
-            sheet = workbook.createSheet(String.format("%s-%s", year, period));
+            sheet = workbook.createSheet(String.format("Kalkulator Value %s-%s", year, period));
             lastRowNum = 0;
 
             // Create header
@@ -78,7 +75,13 @@ public class ExcelDataWriterService {
         }
 
         // Add data
-        addDataRow(sheet, lastRowNum, kodeEmiten, financialData, workbook, period, tradingSummary.get(kodeEmiten));
+        addDataRow(sheet, lastRowNum, kodeEmiten, financialData, workbook, period);
+        sheet.createFreezePane(0, 1);
+
+
+        POIXMLProperties properties = workbook.getProperties();
+        POIXMLProperties.CoreProperties coreProperties = properties.getCoreProperties();
+        coreProperties.setCreator("Teguh Hidayat");
 
         try (FileOutputStream os = new FileOutputStream(targetFile)) {
             workbook.write(os);
@@ -113,86 +116,87 @@ public class ExcelDataWriterService {
     }
 
     private void createHeader(XSSFWorkbook workbook, XSSFSheet sheet) {
-        Row headerRow = sheet.createRow(0);
-        CellStyle headerStyle = workbook.createCellStyle();
-        Font font = workbook.createFont();
-        font.setBold(true);
-        headerStyle.setFont(font);
-        headerStyle.setBorderTop(BorderStyle.MEDIUM);
-        headerStyle.setBorderBottom(BorderStyle.MEDIUM);
-
-        String[] headers = {
-                "Kode Emiten",
+        List<String> headerInput = ImmutableList.of(
+                "Stocks",
                 "Price (Rp)",
                 "Shares",
-                "Volume",
-                "Liquidity",
                 "Liabilities",
-                "Equities",
+                "Equity",
+                "Net Profit",
+                "Net Profit L/Y");
+
+        Row headerRow = sheet.createRow(0);
+        Font blackFont = workbook.createFont();
+        blackFont.setBold(true);
+
+        Font blueFont = workbook.createFont();
+        blueFont.setColor(IndexedColors.LIGHT_BLUE.getIndex());
+        blueFont.setBold(true);
+
+        CellStyle blackHeader = workbook.createCellStyle();
+        blackHeader.setFont(blackFont);
+        blackHeader.setBorderTop(BorderStyle.MEDIUM);
+        blackHeader.setBorderBottom(BorderStyle.MEDIUM);
+        blackHeader.setBorderRight(BorderStyle.MEDIUM);
+        blackHeader.setBorderLeft(BorderStyle.MEDIUM);
+
+        CellStyle blueHeader = workbook.createCellStyle();
+        blueHeader.setFont(blueFont);
+        blueHeader.setBorderTop(BorderStyle.MEDIUM);
+        blueHeader.setBorderBottom(BorderStyle.MEDIUM);
+        blueHeader.setBorderRight(BorderStyle.MEDIUM);
+        blueHeader.setBorderLeft(BorderStyle.MEDIUM);
+
+        String[] headers = {
+                "No.",
+                "Stocks",
+                "Price (Rp)",
+                "PER (x)",
+                "PBV (x)",
+                "DER (x)",
+                "ROE (%)",
+                "Shares",
+                "Liabilities",
+                "Equity",
                 "Net Profit",
                 "Net Profit L/Y",
-                "Market Cap",
-                "DER (x)",
-                "PBV (x)",
-                "PER (x)",
-                "ROE (%)",
                 "EPS (Rp)",
-                "EPS L/Y (Rp)",
-                "Laba (%)",
-                "Rough Exp Price",
-                "MoS (%)",
-                "Turnaround",
-                "Date Added"};
+                "Market Cap",
+                "Laba naik/turun?"};
 
         for (int i = 0; i < headers.length; i++) {
             Cell headerCell = headerRow.createCell(i);
             headerCell.setCellValue(headers[i]);
-            headerCell.setCellStyle(headerStyle);
+
+            if (headerInput.contains(headers[i])) {
+                headerCell.setCellStyle(blueHeader);
+            } else {
+                headerCell.setCellStyle(blackHeader);
+            }
+
         }
     }
 
-    private void addDataRow(XSSFSheet sheet, int rowNum, String kodeEmiten, FinancialData financialData, XSSFWorkbook workbook, String period, TradingSummary tradingSummary) {
+    private void addDataRow(XSSFSheet sheet, int rowNum, String kodeEmiten, FinancialData financialData, XSSFWorkbook workbook, String period) {
         double multiplier = getMultiplierForPeriod(period);
         Row row = sheet.createRow(rowNum);
         int currentRow = rowNum + 1;
 
-
+        setCellValue(row, COL_NO, rowNum, getDecimalStyleNoComma(workbook));
         setCellValue(row, COL_KODE_EMITEN, kodeEmiten, getPlainStyle(workbook));
-        setCellFormula(row, COL_PRICE, createFormula("VLOOKUP(A%d,'Data'!$B$2:$Y$2741,4,FALSE)", currentRow), getCurrencyStyle(workbook));
-        setCellFormula(row, COL_OUTSTANDING_SHARES, createFormula("VLOOKUP(A%d,'Data'!$B$2:$Y$2741,3,FALSE)/1000000000", currentRow),  getDecimalStyle(workbook));
-        if (tradingSummary != null) {
-            setCellValue(row, COL_VOLUME, tradingSummary.getVolume(), getDecimalStyle(workbook));
-        }
-        setCellFormula(row, COL_LIQUIDITY, createFormula("%s%d*%s%d/1000000000", colIndexToLetter(COL_VOLUME), currentRow, colIndexToLetter(COL_PRICE), currentRow),  getDecimalStyle(workbook));
+        setCellFormula(row, COL_PRICE, createFormula("VLOOKUP(B%d,'Data'!$B$2:$Y$2741,4,FALSE)", currentRow), getCurrencyStyle(workbook));
+        setCellFormula(row, COL_PER, createFormula("%s%d/%s%d/%f", colIndexToLetter(COL_PRICE), currentRow, colIndexToLetter(COL_EPS), currentRow, multiplier),  getDecimalStyleBold(workbook));
+        setCellFormula(row, COL_PBV, createFormula("(%s%d*%s%d)/%s%d", colIndexToLetter(COL_PRICE), currentRow, colIndexToLetter(COL_OUTSTANDING_SHARES), currentRow, colIndexToLetter(COL_TOTAL_EQUITIES), currentRow),  getDecimalStyleBold(workbook));
+        setCellFormula(row, COL_DER, createFormula("%s%d/%s%d", colIndexToLetter(COL_TOTAL_LIABILITIES), currentRow, colIndexToLetter(COL_TOTAL_EQUITIES), currentRow),  getDecimalStyle(workbook));
+        setCellFormula(row, COL_ROE, createFormula("(%s%d/%s%d)*%f", colIndexToLetter(COL_NET_PROFIT), currentRow, colIndexToLetter(COL_TOTAL_EQUITIES), currentRow, multiplier), getPercentageStyle(workbook));
+        setCellFormula(row, COL_OUTSTANDING_SHARES, createFormula("VLOOKUP(B%d,'Data'!$B$2:$Y$2741,3,FALSE)/1000000000", currentRow),  getDecimalStyle(workbook));
         setCellValue(row, COL_TOTAL_LIABILITIES, financialData.getTotalLiabilities(), getCurrencyStyle(workbook));
         setCellValue(row, COL_TOTAL_EQUITIES, financialData.getTotalEquities(), getCurrencyStyle(workbook));
         setCellValue(row, COL_NET_PROFIT, financialData.getNetProfit(), getCurrencyStyle(workbook));
         setCellValue(row, COL_NET_PROFIT_LAST_YEAR, financialData.getNetProfitLastYear(), getCurrencyStyle(workbook));
+        setCellFormula(row, COL_EPS, createFormula("(%s%d/%s%d)", colIndexToLetter(COL_NET_PROFIT), currentRow, colIndexToLetter(COL_OUTSTANDING_SHARES), currentRow),  getDecimalStyle(workbook));
         setCellFormula(row, COL_MARKET_CAP, createFormula("%s%d*%s%d", colIndexToLetter(COL_PRICE), currentRow, colIndexToLetter(COL_OUTSTANDING_SHARES), currentRow), getCurrencyStyle(workbook));
-        setCellFormula(row, COL_DER, createFormula("%s%d/%s%d", colIndexToLetter(COL_TOTAL_LIABILITIES), currentRow, colIndexToLetter(COL_TOTAL_EQUITIES), currentRow),  getDecimalStyle(workbook));
-        setCellFormula(row, COL_PBV, createFormula("(%s%d*%s%d)/%s%d", colIndexToLetter(COL_PRICE), currentRow, colIndexToLetter(COL_OUTSTANDING_SHARES), currentRow, colIndexToLetter(COL_TOTAL_EQUITIES), currentRow),  getDecimalStyle(workbook));
-        setCellFormula(row, COL_PER, createFormula("%s%d/%s%d", colIndexToLetter(COL_PRICE), currentRow, colIndexToLetter(COL_EPS), currentRow),  getDecimalStyle(workbook));
-        setCellFormula(row, COL_ROE, createFormula("(%s%d/%s%d)*%f", colIndexToLetter(COL_NET_PROFIT), currentRow, colIndexToLetter(COL_TOTAL_EQUITIES), currentRow, multiplier), getPercentageStyle(workbook));
-        setCellFormula(row, COL_EPS, createFormula("(%s%d/%s%d)*%f", colIndexToLetter(COL_NET_PROFIT), currentRow, colIndexToLetter(COL_OUTSTANDING_SHARES), currentRow, multiplier),  getDecimalStyle(workbook));
-        setCellFormula(row, COL_EPS_LAST_YEAR, createFormula("(%s%d/%s%d)*%f", colIndexToLetter(COL_NET_PROFIT_LAST_YEAR), currentRow, colIndexToLetter(COL_OUTSTANDING_SHARES), currentRow, multiplier),  getDecimalStyle(workbook));
         setCellFormula(row, COL_LABA_NAIK_TURUN, createFormula("((%s%d/%s%d)-1)", colIndexToLetter(COL_NET_PROFIT), currentRow, colIndexToLetter(COL_NET_PROFIT_LAST_YEAR), currentRow), getPercentageStyle(workbook));
-        setCellFormula(row, COL_ROUGH_EXPECTED_PRICE, createFormula("((%s%d/%s%d)*(%s%d*10))", colIndexToLetter(COL_PRICE), currentRow, colIndexToLetter(COL_PBV), currentRow, colIndexToLetter(COL_ROE), currentRow), getCurrencyStyle(workbook));
-
-        if (financialData.getNetProfit() >= 0) {
-            setCellFormula(row, COL_MOS, createFormula("(%s%d-%s%d)/%s%d", colIndexToLetter(COL_ROUGH_EXPECTED_PRICE), currentRow, colIndexToLetter(COL_PRICE), currentRow, colIndexToLetter(COL_ROUGH_EXPECTED_PRICE), currentRow), getPercentageStyle(workbook));
-        } else {
-            setCellValue(row, COL_MOS, "P. Loss", getPlainStyle(workbook));
-        }
-
-        if (financialData.getNetProfit() >= 0 && financialData.getNetProfitLastYear() <=0) {
-            setCellValue(row, COL_TURNAROUND, "TA+", getPlainStyle(workbook));
-        } else if (financialData.getNetProfit() <= 0 && financialData.getNetProfitLastYear() >=0) {
-            setCellValue(row, COL_TURNAROUND, "TA-", getPlainStyle(workbook));
-        } else {
-            setCellValue(row, COL_TURNAROUND, "N/A", getPlainStyle(workbook));
-        }
-
-        setCellValue(row, COL_DATE_ADDED, LocalDate.now(), getDateStyle(workbook));
 
         applyNegativeValueRedFormatting(sheet, COL_PER);
         applyNegativeValueRedFormatting(sheet, COL_PBV);
@@ -201,14 +205,11 @@ public class ExcelDataWriterService {
         applyNegativeValueRedFormatting(sheet, COL_NET_PROFIT);
         applyNegativeValueRedFormatting(sheet, COL_NET_PROFIT_LAST_YEAR);
         applyNegativeValueRedFormatting(sheet, COL_EPS);
-        applyNegativeValueRedFormatting(sheet, COL_EPS_LAST_YEAR);
-        applyNegativeValueRedFormatting(sheet, COL_MOS);
+        applyNegativeValueRedFormatting(sheet, COL_LABA_NAIK_TURUN);
+
 
         autoSizeColumn(sheet);
     }
-
-
-
 
     private void applyNegativeValueRedFormatting(XSSFSheet sheet, int colIndex) {
         XSSFWorkbook workbook = sheet.getWorkbook();
@@ -242,6 +243,8 @@ public class ExcelDataWriterService {
             cell.setCellValue((Double) value);
         }else if (value instanceof Long) {
             cell.setCellValue((Long) value);
+        }else if (value instanceof Integer) {
+            cell.setCellValue((Integer) value);
         } else if (value instanceof String) {
             cell.setCellValue((String) value);
         } else if (value instanceof LocalDate) {
@@ -304,16 +307,25 @@ public class ExcelDataWriterService {
         return findOrCreateCellStyleByDataFormat(workbook, "#,##0");
     }
 
+
+    private CellStyle getDecimalStyleBold(XSSFWorkbook workbook) {
+        CellStyle decimalStyle = findOrCreateCellStyleByDataFormat(workbook, "0.0");
+        Font blackFont = workbook.createFont();
+        blackFont.setBold(true);
+        decimalStyle.setFont(blackFont);
+        return decimalStyle;
+    }
+
     private CellStyle getDecimalStyle(XSSFWorkbook workbook) {
         return findOrCreateCellStyleByDataFormat(workbook, "0.00");
     }
 
-    private CellStyle getPercentageStyle(XSSFWorkbook workbook) {
-        return findOrCreateCellStyleByDataFormat(workbook, "0.00%");
+    private CellStyle getDecimalStyleNoComma(XSSFWorkbook workbook) {
+        return findOrCreateCellStyleByDataFormat(workbook, "0");
     }
 
-    private CellStyle getDateStyle(XSSFWorkbook workbook) {
-        return findOrCreateCellStyleByDataFormat(workbook, "dd-MM-yyyy");
+    private CellStyle getPercentageStyle(XSSFWorkbook workbook) {
+        return findOrCreateCellStyleByDataFormat(workbook, "0.0%");
     }
 
     private CellStyle getPlainStyle(XSSFWorkbook workbook) {

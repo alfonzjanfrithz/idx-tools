@@ -89,7 +89,68 @@ public class FinancialDataCommands {
         long totalTimeTaken = endTimeOverall - startTimeOverall;
         double averageTimePerKodeEmiten = (double) totalProcessingTime / kodeEmitens.length;
 
-        // ... [rest of your summary code]
+
+        System.out.println(ANSI_BLUE + "⏱️ Average Time Per KodeEmiten: " + formatTime((long) averageTimePerKodeEmiten) + ANSI_RESET);
+        System.out.println(ANSI_BLUE + "⏱️ Total Time Taken: " + formatTime(totalTimeTaken) + ANSI_RESET);
+        System.out.println(ANSI_YELLOW + "════════════════════════════════════════════════════════════════════════" + ANSI_RESET);
+    }
+
+    // thReport 2023 II HRTA,ANJT,GOTO,KEJU,SBMA,PURA,KLBF,BAYU,BSML,INCO,MITI,ADMF
+    @Command(command = "thReport", description = "Read the financial data for the given year, period, and multiple kodeEmiten values.")
+    public void thReport(String year, String period, String kodeEmitenList) {
+        String[] kodeEmitens = kodeEmitenList.split(",");
+        int currentCount = 0;
+        int successfulCount = 0;
+        int failedCount = 0;
+        Map<String, String> failedDetails = new HashMap<>();
+        long totalProcessingTime = 0;
+
+        long startTimeOverall = System.currentTimeMillis(); // Start time for the entire process
+        for (String kodeEmiten : kodeEmitens) {
+            currentCount++;
+            long startTime = System.currentTimeMillis(); // Start time for this kodeEmiten
+
+            System.out.println(ANSI_YELLOW + "════════════════════════════════════════════════════════════════════════" + ANSI_RESET);
+            System.out.println(ANSI_CYAN + "🔄 Processing data for kodeEmiten: " + kodeEmiten.trim() +" ("+ currentCount + "/" + kodeEmitens.length + ") ..." + ANSI_RESET);
+            try {
+                excelReaderService.simplerReadExcel(year, period, kodeEmiten.trim());
+                System.out.println(ANSI_GREEN + "✅ Successfully processed data for kodeEmiten: " + kodeEmiten.trim() + ANSI_RESET);
+                successfulCount++;
+            } catch (Exception e) {
+                String errorMessage = e.getMessage();
+                failedDetails.put(kodeEmiten.trim(), errorMessage);
+                failedCount++;
+
+                if (e instanceof IOException) {
+                    System.out.println(ANSI_RED + "❌ Error processing data for kodeEmiten: " + kodeEmiten.trim() + ". Reason: " + errorMessage + ANSI_RESET);
+                } else if (e instanceof InvalidFormatException) {
+                    System.out.println(ANSI_RED + "⚠️ Invalid format encountered for kodeEmiten: " + kodeEmiten.trim() + ". Reason: " + errorMessage + ANSI_RESET);
+                } else {
+                    System.out.println(ANSI_RED + "❌ Unknown Error processing data for kodeEmiten: " + kodeEmiten.trim() + ". Reason: " + errorMessage + ANSI_RESET);
+                }
+            }
+            long endTime = System.currentTimeMillis(); // End time for this kodeEmiten
+            totalProcessingTime += (endTime - startTime);
+            System.out.println(ANSI_YELLOW + "════════════════════════════════════════════════════════════════════════" + ANSI_RESET);
+        }
+
+        // Summary
+        System.out.println(ANSI_YELLOW + "════════════════════════════════════════════════════════════════════════" + ANSI_RESET);
+        System.out.println(ANSI_CYAN + "📊 SUMMARY 📊" + ANSI_RESET);
+        System.out.println(ANSI_GREEN + "✅ Total Successful: " + successfulCount + ANSI_RESET);
+        System.out.println(ANSI_RED + "❌ Total Failed: " + failedCount + ANSI_RESET);
+        System.out.println(ANSI_BLUE + "📁 Total Files Processed: " + kodeEmitens.length + ANSI_RESET);
+
+        if (failedCount > 0) {
+            System.out.println(ANSI_RED + "\n❌ Failed Details:" + ANSI_RESET);
+            for (Map.Entry<String, String> entry : failedDetails.entrySet()) {
+                System.out.println(ANSI_RED + "❌ " + entry.getKey() + ": " + entry.getValue() + ANSI_RESET);
+            }
+        }
+
+        long endTimeOverall = System.currentTimeMillis(); // End time for the entire process
+        long totalTimeTaken = endTimeOverall - startTimeOverall;
+        double averageTimePerKodeEmiten = (double) totalProcessingTime / kodeEmitens.length;
 
         System.out.println(ANSI_BLUE + "⏱️ Average Time Per KodeEmiten: " + formatTime((long) averageTimePerKodeEmiten) + ANSI_RESET);
         System.out.println(ANSI_BLUE + "⏱️ Total Time Taken: " + formatTime(totalTimeTaken) + ANSI_RESET);
@@ -110,7 +171,4 @@ public class FinancialDataCommands {
         }
         return formattedTime.toString().trim(); // trim() to remove any trailing space
     }
-
-    // TODO: Create the directory if its not available
-    // TODO: Refactor many things
 }

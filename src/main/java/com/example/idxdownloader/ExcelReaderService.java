@@ -13,11 +13,17 @@ public class ExcelReaderService {
     private final FileDownloadService fileService;
     private final ExcelDataReaderService dataReaderService;
     private final ExcelDataWriterService dataWriterService;
+    private final SimplerExcelDataWriterService simplerDataWriterService;
 
 
     public void readExcel(String year, String period, String kodeEmiten, Map<String, TradingSummary> tradingSummary) throws IOException, InvalidFormatException {
         FinancialData financialData = getFinancialData(year, period, kodeEmiten);
         dataWriterService.updateOrCreateExcel(year, period, kodeEmiten, financialData, tradingSummary);
+    }
+
+    public void simplerReadExcel(String year, String period, String kodeEmiten) throws IOException, InvalidFormatException {
+        FinancialData financialData = getFinancialData(year, period, kodeEmiten);
+        simplerDataWriterService.updateOrCreateExcel(year, period, kodeEmiten, financialData);
     }
 
     public FinancialData getFinancialData(String year, String period, String kodeEmiten) throws IOException, InvalidFormatException {
