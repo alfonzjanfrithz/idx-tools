@@ -96,6 +96,7 @@ public class FinancialDataCommands {
     }
 
     // thReport 2023 II HRTA,ANJT,GOTO,KEJU,SBMA,PURA,KLBF,BAYU,BSML,INCO,MITI,ADMF
+    // thReport 2023 III DOOH 15493
     @Command(command = "thReport", description = "Read the financial data for the given year, period, and multiple kodeEmiten values.")
     public void thReport(String year, String period, String kodeEmitenList, Long usdIdrRate) {
         String[] kodeEmitens = kodeEmitenList.split(",");
@@ -106,6 +107,7 @@ public class FinancialDataCommands {
         long totalProcessingTime = 0;
 
         long startTimeOverall = System.currentTimeMillis(); // Start time for the entire process
+        Map<String, TradingSummary> tradingSummary = tradingSummaryService.getTradingSummary();
         for (String kodeEmiten : kodeEmitens) {
             currentCount++;
             long startTime = System.currentTimeMillis(); // Start time for this kodeEmiten
@@ -113,7 +115,7 @@ public class FinancialDataCommands {
             System.out.println(ANSI_YELLOW + "════════════════════════════════════════════════════════════════════════" + ANSI_RESET);
             System.out.println(ANSI_CYAN + "🔄 Processing data for kodeEmiten: " + kodeEmiten.trim() +" ("+ currentCount + "/" + kodeEmitens.length + ") ..." + ANSI_RESET);
             try {
-                excelReaderService.simplerReadExcel(year, period, kodeEmiten.trim(), usdIdrRate);
+                excelReaderService.simplerReadExcel(year, period, kodeEmiten.trim(), usdIdrRate, tradingSummary);
                 System.out.println(ANSI_GREEN + "✅ Successfully processed data for kodeEmiten: " + kodeEmiten.trim() + ANSI_RESET);
                 successfulCount++;
             } catch (Exception e) {

@@ -26,6 +26,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @AllArgsConstructor
@@ -45,9 +46,10 @@ public class SimplerExcelDataWriterService {
     private static final int COL_EPS = 12;
     private static final int COL_MARKET_CAP = 13;
     private static final int COL_LABA_NAIK_TURUN = 14;
+    private static final int COL_OTHERS = 15;
 
 
-    public void updateOrCreateExcel(String year, String period, String kodeEmiten, FinancialData financialData) throws IOException {
+    public void updateOrCreateExcel(String year, String period, String kodeEmiten, FinancialData financialData, Map<String,TradingSummary> tradingSummary) throws IOException {
         String targetFilePath = System.getProperty("user.home") + "\\.idx-tmp\\kalkulator-saham-" + year + "-" + period + ".xlsx";
         File targetFile = new File(targetFilePath);
 
@@ -68,15 +70,11 @@ public class SimplerExcelDataWriterService {
             // Create header
             createHeader(workbook, sheet, year, period);
             lastRowNum++;
-
-            // Copy "Data" sheet from shares_detail_20230929.xlsx to this workbook
-            copyDataSheetToWorkbook(workbook);
         }
 
         // Add data
-        addDataRow(sheet, lastRowNum, kodeEmiten, financialData, workbook, period);
+        addDataRow(sheet, lastRowNum, kodeEmiten, financialData, workbook, period, tradingSummary.get(kodeEmiten));
         sheet.createFreezePane(0, 1);
-
 
         POIXMLProperties properties = workbook.getProperties();
         POIXMLProperties.CoreProperties coreProperties = properties.getCoreProperties();
@@ -88,30 +86,12 @@ public class SimplerExcelDataWriterService {
         workbook.close();
     }
 
-    private void copyDataSheetToWorkbook(XSSFWorkbook targetWorkbook) throws IOException {
-        String sourceFilePath = "shares_detail_20230929.xlsx"; // Assuming it's in the root folder
-        FileInputStream fis = new FileInputStream(sourceFilePath);
-        XSSFWorkbook sourceWorkbook = new XSSFWorkbook(fis);
-        XSSFSheet sourceSheet = sourceWorkbook.getSheet("Data");
-
-        XSSFSheet targetSheet = targetWorkbook.createSheet("Data");
-
-        for (int i = 0; i <= sourceSheet.getLastRowNum(); i++) {
-            Row sourceRow = sourceSheet.getRow(i);
-            Row targetRow = targetSheet.createRow(i);
-            if (sourceRow != null) {
-                for (int j = 0; j < sourceRow.getLastCellNum(); j++) {
-                    Cell sourceCell = sourceRow.getCell(j);
-                    Cell targetCell = targetRow.createCell(j);
-                    if (sourceCell != null) {
-                        targetCell.setCellValue(sourceCell.toString());
-                    }
-                }
-            }
+    private void addOrUpdateRow(XSSFSheet sheet, XSSFWorkbook workbook, int rowIndex, String value) {
+        Row row = sheet.getRow(rowIndex);
+        if (row == null) {
+            row = sheet.createRow(rowIndex);
         }
-
-        sourceWorkbook.close();
-        fis.close();
+        setCellValue(row, COL_OTHERS, value, getPlainStyle(workbook));
     }
 
     public static String mapQuarter(String input) throws IllegalArgumentException {
@@ -137,8 +117,8 @@ public class SimplerExcelDataWriterService {
                 "Shares",
                 "Liabilities",
                 "Equity",
-                String.format("Net Profit %s-%s", year,quarter),
-                String.format("Net Profit %d-%s", Integer.parseInt(year)-1, quarter));
+                String.format("Net Profit %s %s ",quarter, year),
+                String.format("Net Profit %s %d", quarter, Integer.parseInt(year)-1));
 
         Row headerRow = sheet.createRow(0);
         Font blackFont = workbook.createFont();
@@ -173,8 +153,8 @@ public class SimplerExcelDataWriterService {
                 "Shares",
                 "Liabilities",
                 "Equity",
-                String.format("Net Profit %s-%s", year,quarter),
-                String.format("Net Profit %d-%s", Integer.parseInt(year)-1, quarter),
+                String.format("Net Profit %s %s ",quarter, year),
+                String.format("Net Profit %s %d", quarter, Integer.parseInt(year)-1),
                 "EPS (Rp)",
                 "Market Cap",
                 "Laba naik/turun?"};
@@ -192,19 +172,28 @@ public class SimplerExcelDataWriterService {
         }
     }
 
-    private void addDataRow(XSSFSheet sheet, int rowNum, String kodeEmiten, FinancialData financialData, XSSFWorkbook workbook, String period) {
+    private void addDataRow(XSSFSheet sheet, int rowNum, String kodeEmiten, FinancialData financialData, XSSFWorkbook workbook, String period, TradingSummary tradingSummary) {
         double multiplier = getMultiplierForPeriod(period);
-        Row row = sheet.createRow(rowNum);
+        Row row = sheet.getRow(rowNum) != null ? sheet.getRow(rowNum) : sheet.createRow(rowNum);
         int currentRow = rowNum + 1;
+        Long price = 0L;
+        Double listedShares = 0.0;
+
+        if (tradingSummary != null) {
+            price = tradingSummary.getClose();
+            listedShares = Double.valueOf(tradingSummary.getListedShares()) /1000000000;
+        } else {
+            throw new RuntimeException(String.format("Cannot find tradingSummary for %s", kodeEmiten));
+        }
 
         setCellValue(row, COL_NO, rowNum, getDecimalStyleNoComma(workbook));
         setCellValue(row, COL_KODE_EMITEN, kodeEmiten, getPlainStyle(workbook));
-        setCellFormula(row, COL_PRICE, createFormula("VALUE(VLOOKUP(B%d,'Data'!$B$2:$Y$2741,4,FALSE))", currentRow), getCurrencyStyle(workbook));
+        setCellValue(row, COL_PRICE, price, getCurrencyStyle(workbook));
         setCellFormula(row, COL_PER, createFormula("%s%d/%s%d/%f", colIndexToLetter(COL_PRICE), currentRow, colIndexToLetter(COL_EPS), currentRow, multiplier),  getDecimalStyleBold(workbook));
         setCellFormula(row, COL_PBV, createFormula("(%s%d*%s%d)/%s%d", colIndexToLetter(COL_PRICE), currentRow, colIndexToLetter(COL_OUTSTANDING_SHARES), currentRow, colIndexToLetter(COL_TOTAL_EQUITIES), currentRow),  getDecimalStyleBold(workbook));
         setCellFormula(row, COL_DER, createFormula("%s%d/%s%d", colIndexToLetter(COL_TOTAL_LIABILITIES), currentRow, colIndexToLetter(COL_TOTAL_EQUITIES), currentRow),  getDecimalStyle(workbook));
         setCellFormula(row, COL_ROE, createFormula("(%s%d/%s%d)*%f", colIndexToLetter(COL_NET_PROFIT), currentRow, colIndexToLetter(COL_TOTAL_EQUITIES), currentRow, multiplier), getPercentageStyle(workbook));
-        setCellFormula(row, COL_OUTSTANDING_SHARES, createFormula("VLOOKUP(B%d,'Data'!$B$2:$Y$2741,3,FALSE)/1000000000", currentRow),  getDecimalStyle(workbook));
+        setCellValue(row, COL_OUTSTANDING_SHARES, listedShares, getDecimalStyle(workbook));
         setCellValue(row, COL_TOTAL_LIABILITIES, financialData.getTotalLiabilities(), getCurrencyStyle(workbook));
         setCellValue(row, COL_TOTAL_EQUITIES, financialData.getTotalEquities(), getCurrencyStyle(workbook));
         setCellValue(row, COL_NET_PROFIT, financialData.getNetProfit(), getCurrencyStyle(workbook));
@@ -253,7 +242,10 @@ public class SimplerExcelDataWriterService {
     }
 
     private void setCellValue(Row row, int colIndex, Object value, CellStyle style) {
-        Cell cell = row.createCell(colIndex);
+        Cell cell = row.getCell(colIndex);
+        if (cell == null) {
+            cell = row.createCell(colIndex);
+        }
         if (value instanceof Double) {
             cell.setCellValue((Double) value);
         }else if (value instanceof Long) {

@@ -24,9 +24,9 @@ public class ExcelReaderService {
         dataWriterService.updateOrCreateExcel(year, period, kodeEmiten, financialData, tradingSummary);
     }
 
-    public void simplerReadExcel(String year, String period, String kodeEmiten, Long usdIdrRate) throws IOException, InvalidFormatException {
+    public void simplerReadExcel(String year, String period, String kodeEmiten, Long usdIdrRate, Map<String, TradingSummary> tradingSummary) throws IOException, InvalidFormatException {
         FinancialData financialData = getFinancialData(year, period, kodeEmiten, usdIdrRate);
-        simplerDataWriterService.updateOrCreateExcel(year, period, kodeEmiten, financialData);
+        simplerDataWriterService.updateOrCreateExcel(year, period, kodeEmiten, financialData, tradingSummary);
     }
 
     public FinancialData getFinancialData(String year, String period, String kodeEmiten) throws IOException, InvalidFormatException {
