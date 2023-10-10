@@ -158,7 +158,7 @@ public class ExcelDataWriterService {
 
 
         setCellValue(row, COL_KODE_EMITEN, kodeEmiten, getPlainStyle(workbook));
-        setCellFormula(row, COL_PRICE, createFormula("VLOOKUP(A%d,'Data'!$B$2:$Y$2741,4,FALSE)", currentRow), getCurrencyStyle(workbook));
+        setCellFormula(row, COL_PRICE, createFormula("VALUE(VLOOKUP(A%d,'Data'!$B$2:$Y$2741,4,FALSE))", currentRow), getCurrencyStyle(workbook));
         setCellFormula(row, COL_OUTSTANDING_SHARES, createFormula("VLOOKUP(A%d,'Data'!$B$2:$Y$2741,3,FALSE)/1000000000", currentRow),  getDecimalStyle(workbook));
         if (tradingSummary != null) {
             setCellValue(row, COL_VOLUME, tradingSummary.getVolume(), getDecimalStyle(workbook));

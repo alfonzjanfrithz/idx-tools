@@ -26,7 +26,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 
 @Service
 @AllArgsConstructor
@@ -67,7 +66,7 @@ public class SimplerExcelDataWriterService {
             lastRowNum = 0;
 
             // Create header
-            createHeader(workbook, sheet);
+            createHeader(workbook, sheet, year, period);
             lastRowNum++;
 
             // Copy "Data" sheet from shares_detail_20230929.xlsx to this workbook
@@ -115,15 +114,31 @@ public class SimplerExcelDataWriterService {
         fis.close();
     }
 
-    private void createHeader(XSSFWorkbook workbook, XSSFSheet sheet) {
+    public static String mapQuarter(String input) throws IllegalArgumentException {
+        switch (input) {
+            case "I":
+                return "Q1";
+            case "II":
+                return "Q2";
+            case "III":
+                return "Q3";
+            case "Tahunan":
+                return "Q4";
+            default:
+                throw new IllegalArgumentException("Invalid input: " + input);
+        }
+    }
+
+    private void createHeader(XSSFWorkbook workbook, XSSFSheet sheet, String year, String period) {
+        String quarter = mapQuarter(period);
         List<String> headerInput = ImmutableList.of(
                 "Stocks",
                 "Price (Rp)",
                 "Shares",
                 "Liabilities",
                 "Equity",
-                "Net Profit",
-                "Net Profit L/Y");
+                String.format("Net Profit %s-%s", year,quarter),
+                String.format("Net Profit %d-%s", Integer.parseInt(year)-1, quarter));
 
         Row headerRow = sheet.createRow(0);
         Font blackFont = workbook.createFont();
@@ -158,8 +173,8 @@ public class SimplerExcelDataWriterService {
                 "Shares",
                 "Liabilities",
                 "Equity",
-                "Net Profit",
-                "Net Profit L/Y",
+                String.format("Net Profit %s-%s", year,quarter),
+                String.format("Net Profit %d-%s", Integer.parseInt(year)-1, quarter),
                 "EPS (Rp)",
                 "Market Cap",
                 "Laba naik/turun?"};
@@ -184,7 +199,7 @@ public class SimplerExcelDataWriterService {
 
         setCellValue(row, COL_NO, rowNum, getDecimalStyleNoComma(workbook));
         setCellValue(row, COL_KODE_EMITEN, kodeEmiten, getPlainStyle(workbook));
-        setCellFormula(row, COL_PRICE, createFormula("VLOOKUP(B%d,'Data'!$B$2:$Y$2741,4,FALSE)", currentRow), getCurrencyStyle(workbook));
+        setCellFormula(row, COL_PRICE, createFormula("VALUE(VLOOKUP(B%d,'Data'!$B$2:$Y$2741,4,FALSE))", currentRow), getCurrencyStyle(workbook));
         setCellFormula(row, COL_PER, createFormula("%s%d/%s%d/%f", colIndexToLetter(COL_PRICE), currentRow, colIndexToLetter(COL_EPS), currentRow, multiplier),  getDecimalStyleBold(workbook));
         setCellFormula(row, COL_PBV, createFormula("(%s%d*%s%d)/%s%d", colIndexToLetter(COL_PRICE), currentRow, colIndexToLetter(COL_OUTSTANDING_SHARES), currentRow, colIndexToLetter(COL_TOTAL_EQUITIES), currentRow),  getDecimalStyleBold(workbook));
         setCellFormula(row, COL_DER, createFormula("%s%d/%s%d", colIndexToLetter(COL_TOTAL_LIABILITIES), currentRow, colIndexToLetter(COL_TOTAL_EQUITIES), currentRow),  getDecimalStyle(workbook));
