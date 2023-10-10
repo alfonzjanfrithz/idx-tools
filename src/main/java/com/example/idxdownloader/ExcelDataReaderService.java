@@ -30,10 +30,12 @@ public class ExcelDataReaderService {
     public static final String KEY_PENJUALAN_DAN_PENDAPATAN_USAHA = "Penjualan dan pendapatan usaha";
     public static final String KEY_BEBAN_POKOK = "Beban pokok penjualan dan pendapatan";
 
-    public FinancialData readFinancialData(String filePath) throws IOException, InvalidFormatException {
+
+
+
+    public FinancialData readFinancialData(String filePath, Long usdIdrRate) throws IOException, InvalidFormatException {
         FinancialData financialData = new FinancialData();
 
-        final double USD_CONVERSION_RATE = 15000.0; // Conversion rate for USD to IDR
         final double BILLION = 1_000_000_000.0; // 1 billion
 
         ZipSecureFile.setMinInflateRatio(0.002);
@@ -52,10 +54,10 @@ public class ExcelDataReaderService {
 
             // Convert values if they are in USD
             if (!isIDRCurrency) {
-                totalLiabilities *= USD_CONVERSION_RATE;
-                totalEquities *= USD_CONVERSION_RATE;
-                netProfit *= USD_CONVERSION_RATE;
-                netProfitLastYear *= USD_CONVERSION_RATE;
+                totalLiabilities *= usdIdrRate;
+                totalEquities *= usdIdrRate;
+                netProfit *= usdIdrRate;
+                netProfitLastYear *= usdIdrRate;
             }
 
             // Normalize values based on the multiplier and convert to billions
