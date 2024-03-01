@@ -97,8 +97,9 @@ public class FinancialDataCommands {
 
     // thReport 2023 II HRTA,ANJT,GOTO,KEJU,SBMA,PURA,KLBF,BAYU,BSML,INCO,MITI,ADMF
     // thReport 2023 III DOOH 15493
+    // thReport 2023 Tahunan 15397 AALI,ACST,ADMF,ARNA,ASGR,BBCA,BBHI,BBNI,BFIN,BJTM,BMRI,CFIN,EAST,FUJI,HATM,INCO,ISAT,ITMG,LINK,LPPF,MCOR,MEGA,NIKL,PANS,PJAA,PNBN,UCID
     @Command(command = "thReport", description = "Read the financial data for the given year, period, and multiple kodeEmiten values.")
-    public void thReport(String year, String period, String kodeEmitenList, Long usdIdrRate) {
+    public void thReport(String year, String period, Long usdIdrRate, String kodeEmitenList) {
         String[] kodeEmitens = kodeEmitenList.split(",");
         int currentCount = 0;
         int successfulCount = 0;

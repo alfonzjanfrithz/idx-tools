@@ -50,7 +50,7 @@ public class SimplerExcelDataWriterService {
 
 
     public void updateOrCreateExcel(String year, String period, String kodeEmiten, FinancialData financialData, Map<String,TradingSummary> tradingSummary) throws IOException {
-        String targetFilePath = System.getProperty("user.home") + "\\.idx-tmp\\kalkulator-saham-" + year + "-" + period + ".xlsx";
+        String targetFilePath = System.getProperty("user.home") + "\\.idx-tmp\\kalkulator-saham-" + year + "-" + period + "-AutoGen.xlsx";
         File targetFile = new File(targetFilePath);
 
         XSSFWorkbook workbook;
@@ -186,6 +186,13 @@ public class SimplerExcelDataWriterService {
             throw new RuntimeException(String.format("Cannot find tradingSummary for %s", kodeEmiten));
         }
 
+        double pbv = price * listedShares / financialData.getTotalEquities();
+
+        Long divider = 1L;
+        if (pbv < 0.0001) {
+            divider = 1_000_000L;
+        }
+
         setCellValue(row, COL_NO, rowNum, getDecimalStyleNoComma(workbook));
         setCellValue(row, COL_KODE_EMITEN, kodeEmiten, getPlainStyle(workbook));
         setCellValue(row, COL_PRICE, price, getCurrencyStyle(workbook));
@@ -194,10 +201,10 @@ public class SimplerExcelDataWriterService {
         setCellFormula(row, COL_DER, createFormula("%s%d/%s%d", colIndexToLetter(COL_TOTAL_LIABILITIES), currentRow, colIndexToLetter(COL_TOTAL_EQUITIES), currentRow),  getDecimalStyle(workbook));
         setCellFormula(row, COL_ROE, createFormula("(%s%d/%s%d)*%f", colIndexToLetter(COL_NET_PROFIT), currentRow, colIndexToLetter(COL_TOTAL_EQUITIES), currentRow, multiplier), getPercentageStyle(workbook));
         setCellValue(row, COL_OUTSTANDING_SHARES, listedShares, getDecimalStyle(workbook));
-        setCellValue(row, COL_TOTAL_LIABILITIES, financialData.getTotalLiabilities(), getCurrencyStyle(workbook));
-        setCellValue(row, COL_TOTAL_EQUITIES, financialData.getTotalEquities(), getCurrencyStyle(workbook));
-        setCellValue(row, COL_NET_PROFIT, financialData.getNetProfit(), getCurrencyStyle(workbook));
-        setCellValue(row, COL_NET_PROFIT_LAST_YEAR, financialData.getNetProfitLastYear(), getCurrencyStyle(workbook));
+        setCellValue(row, COL_TOTAL_LIABILITIES, financialData.getTotalLiabilities()/divider, getCurrencyStyle(workbook));
+        setCellValue(row, COL_TOTAL_EQUITIES, financialData.getTotalEquities()/divider, getCurrencyStyle(workbook));
+        setCellValue(row, COL_NET_PROFIT, financialData.getNetProfit()/divider, getCurrencyStyle(workbook));
+        setCellValue(row, COL_NET_PROFIT_LAST_YEAR, financialData.getNetProfitLastYear()/divider, getCurrencyStyle(workbook));
         setCellFormula(row, COL_EPS, createFormula("(%s%d/%s%d)", colIndexToLetter(COL_NET_PROFIT), currentRow, colIndexToLetter(COL_OUTSTANDING_SHARES), currentRow),  getDecimalStyle(workbook));
         setCellFormula(row, COL_MARKET_CAP, createFormula("%s%d*%s%d", colIndexToLetter(COL_PRICE), currentRow, colIndexToLetter(COL_OUTSTANDING_SHARES), currentRow), getCurrencyStyle(workbook));
         setCellFormula(row, COL_LABA_NAIK_TURUN, createFormula("((%s%d/%s%d)-1)", colIndexToLetter(COL_NET_PROFIT), currentRow, colIndexToLetter(COL_NET_PROFIT_LAST_YEAR), currentRow), getPercentageStyle(workbook));
